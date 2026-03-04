@@ -5,7 +5,19 @@ export async function httpTrigger1(request: HttpRequest, context: InvocationCont
 
     const name = request.query.get('name') || await request.text() || 'world';
 
-    return { body: `Hello, ${name}!` };
+    // curl -s ifconfig.me と同等の処理
+    let outboundIp = 'Unknown';
+    try {
+        const response = await fetch('https://ifconfig.me');
+        outboundIp = await response.text();
+    } catch (error) {
+        context.error('Failed to fetch outbound IP:', error);
+        outboundIp = 'Error: Could not retrieve';
+    }
+
+    return {
+        body: `Hello, ${name}!\n\nOutbound IP: ${outboundIp}`
+    };
 };
 
 app.http('httpTrigger1', {
