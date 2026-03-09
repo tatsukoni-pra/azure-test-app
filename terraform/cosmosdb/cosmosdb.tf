@@ -10,8 +10,11 @@ resource "azurerm_cosmosdb_account" "cosmostatsukonievent" {
   free_tier_enabled          = false
   automatic_failover_enabled = true
 
-  capabilities {
-    name = "EnableServerless"
+  dynamic "capabilities" {
+    for_each = local.is_serverless == "true" ? [1] : []
+    content {
+      name = "EnableServerless"
+    }
   }
 
   consistency_policy {
@@ -38,10 +41,12 @@ resource "azurerm_cosmosdb_sql_database" "test_event" {
   resource_group_name = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
   account_name        = azurerm_cosmosdb_account.cosmostatsukonievent.name
 
-  # Serverless モードの CosmosDB アカウントではスループット設定（autoscale_settings）がサポートされていないため、指定するとエラーになる
-  # autoscale_settings {
-  #   max_throughput = 1000
-  # }
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
 }
 
 # CosmosDB SQL Container - AppEvents
@@ -58,10 +63,12 @@ resource "azurerm_cosmosdb_sql_container" "app_events" {
     conflict_resolution_path = "/_ts"
   }
 
-  # Serverless モードの CosmosDB アカウントではスループット設定（autoscale_settings）がサポートされていないため、指定するとエラーになる
-  # autoscale_settings {
-  #   max_throughput = 1000
-  # }
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
 }
 
 # CosmosDB SQL Container - FrontEvents
@@ -78,8 +85,10 @@ resource "azurerm_cosmosdb_sql_container" "front_events" {
     conflict_resolution_path = "/_ts"
   }
 
-  # Serverless モードの CosmosDB アカウントではスループット設定（autoscale_settings）がサポートされていないため、指定するとエラーになる
-  # autoscale_settings {
-  #   max_throughput = 1000
-  # }
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
 }
