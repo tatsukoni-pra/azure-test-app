@@ -1,0 +1,24 @@
+name: Seed CosmosDB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # FIXME: エンドポイント・シークレットキー値は動的に取得する形にしたい
+      - name: Seed CosmosDB
+        working-directory: ./seed
+        env:
+          COSMOS_ENDPOINT: ${{ secrets.COSMOS_ENDPOINT }}
+          COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
+          DATABASE_NAME: TestEvent
+        run: |
+          npm install && npm run build && npm run seed
