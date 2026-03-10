@@ -30,17 +30,45 @@ async function main() {
       if (!containerDir.isDirectory()) continue;
 
       const containerName = containerDir.name;
+      const container = database.container(containerName);
+
+      console.log(`  [${containerName}]`);
+
+      const { resources: existingItems } = await container.items
+        .query("SELECT c.id FROM c")
+        .fetchAll();
+
+      if (existingItems.length > 0) {
+        const deleteOperations = existingItems.map((item) => ({
+          operationType: "Delete" as const,
+          id: item.id,
+          partitionKey: item.id,
+        }));
+
+        await container.items.bulk(deleteOperations);
+        console.log(`    Deleted ${existingItems.length} existing items`);
+      }
+
       const containerPath = path.join(dbPath, containerDir.name);
       const files = await fs.readdir(containerPath);
       const jsonFiles = files.filter((f) => f.endsWith(".json"));
 
-      console.log(`  [${containerName}]`);
+      const dataItems = [];
       for (const file of jsonFiles) {
         const data = JSON.parse(
           await fs.readFile(path.join(containerPath, file), "utf-8")
         );
-        await database.container(containerName).items.upsert(data);
-        console.log(`    ✓ ${data.id}`);
+        dataItems.push(data);
+      }
+
+      if (dataItems.length > 0) {
+        const createOperations = dataItems.map((data) => ({
+          operationType: "Create" as const,
+          resourceBody: data,
+        }));
+
+        await container.items.bulk(createOperations);
+        dataItems.forEach((data) => console.log(`    ✓ ${data.id}`));
       }
     }
     console.log();
