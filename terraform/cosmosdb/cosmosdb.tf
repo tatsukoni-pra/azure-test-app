@@ -35,9 +35,23 @@ resource "azurerm_cosmosdb_account" "cosmostatsukonievent" {
   }
 }
 
-# CosmosDB SQL Database
+# CosmosDB SQL Database - TestEvent
 resource "azurerm_cosmosdb_sql_database" "test_event" {
   name                = "TestEvent"
+  resource_group_name = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
+  account_name        = azurerm_cosmosdb_account.cosmostatsukonievent.name
+
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
+}
+
+# CosmosDB SQL Database - TestEventV2
+resource "azurerm_cosmosdb_sql_database" "test_event_v2" {
+  name                = "TestEventV2"
   resource_group_name = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
   account_name        = azurerm_cosmosdb_account.cosmostatsukonievent.name
 
@@ -77,6 +91,50 @@ resource "azurerm_cosmosdb_sql_container" "front_events" {
   resource_group_name   = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
   account_name          = azurerm_cosmosdb_account.cosmostatsukonievent.name
   database_name         = azurerm_cosmosdb_sql_database.test_event.name
+  partition_key_paths   = ["/id"]
+  partition_key_version = 2
+
+  conflict_resolution_policy {
+    mode                     = "LastWriterWins"
+    conflict_resolution_path = "/_ts"
+  }
+
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
+}
+
+# CosmosDB SQL Container - BackendEvents
+resource "azurerm_cosmosdb_sql_container" "backend_events" {
+  name                  = "BackendEvents"
+  resource_group_name   = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
+  account_name          = azurerm_cosmosdb_account.cosmostatsukonievent.name
+  database_name         = azurerm_cosmosdb_sql_database.test_event_v2.name
+  partition_key_paths   = ["/id"]
+  partition_key_version = 2
+
+  conflict_resolution_policy {
+    mode                     = "LastWriterWins"
+    conflict_resolution_path = "/_ts"
+  }
+
+  dynamic "autoscale_settings" {
+    for_each = local.is_serverless != "true" ? [1] : []
+    content {
+      max_throughput = 1000
+    }
+  }
+}
+
+# CosmosDB SQL Container - InfraEvents
+resource "azurerm_cosmosdb_sql_container" "infra_events" {
+  name                  = "InfraEvents"
+  resource_group_name   = azurerm_cosmosdb_account.cosmostatsukonievent.resource_group_name
+  account_name          = azurerm_cosmosdb_account.cosmostatsukonievent.name
+  database_name         = azurerm_cosmosdb_sql_database.test_event_v2.name
   partition_key_paths   = ["/id"]
   partition_key_version = 2
 

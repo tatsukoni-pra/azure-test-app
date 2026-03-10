@@ -19,6 +19,5 @@ jobs:
         env:
           COSMOS_ENDPOINT: ${{ secrets.COSMOS_ENDPOINT }}
           COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
-          DATABASE_NAME: TestEvent
         run: |
           npm install && npm run build && npm run seed

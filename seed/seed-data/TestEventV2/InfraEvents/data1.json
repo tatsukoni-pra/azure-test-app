@@ -1,0 +1,5 @@
+{
+  "id": "infra_001",
+  "type": "deployment",
+  "environment": "production"
+}
